@@ -9,6 +9,15 @@ import time
 # My First approach to this is brute-force and iterating over every cell
 # However, I believe the more optimized approach involves keeping
 # all alive Cells in an array and creating computations off that
+DIRECTIONS = [(1, 0),
+              (-1, 0),
+              (0, 1),
+              (0, -1),
+              (1, 1),
+              (-1, 1),
+              (1, -1),
+              (-1, -1)]
+
 
 class Cell:
     def __init__(self, alive=False):
@@ -34,66 +43,74 @@ class Board:
     def __init__(self, width, height):
         self.bounds = (width, height)
         self.board = [[Cell() for _ in range(width)] for _ in range(height)]
+        self.alive_cell_positions = []
+
 
     def get_cell(self, x, y):
         return self.board[y][x]
 
-    def get_cell_neighbors(self, x, y):
-        pos = (x, y)
-        neighbor_rel = [(1, 0),
-                        (-1, 0),
-                        (0, 1),
-                        (0, -1),
-                        (1, 1),
-                        (-1, 1),
-                        (1, -1),
-                        (-1, -1)]
-        potential_neighbors = [tuple([sum(coord) for coord in zip(pos, rel_pos)]) for rel_pos in neighbor_rel]
-        neighbors = []
+    def wake_up_cell(self, x, y):
+        cell = self.get_cell(x, y)
+        cell.wake_up()
+        self.alive_cell_positions.append((x, y))
 
-        for neighbor_pos in potential_neighbors:
-            if neighbor_pos[0] in range(self.bounds[0]) and neighbor_pos[1] in range(self.bounds[1]):
-                neighbor = self.get_cell(neighbor_pos[0], neighbor_pos[1])
-                neighbors.append(neighbor)
+    def kill_cell(self, x, y):
+        cell = self.get_cell(x, y)
+        cell.kill()
+        self.alive_cell_positions.remove((x, y))
 
-        return neighbors
+    def toggle_cell(self, x, y):
+        cell = self.get_cell(x, y)
+        cell.toggle_state()
+        if cell.alive:
+            self.alive_cell_positions.append((x, y))
+        else:
+            self.alive_cell_positions.remove((x, y))
 
-    def get_alive_neighbors(self, x, y):
-        neighbors = self.get_cell_neighbors(x, y)
-        alive_neighbors = []
 
-        for neighbor in neighbors:
-            if neighbor.alive:
-                alive_neighbors.append(neighbor)
+    def get_neighbor_positions(self, x, y):
+        position = (x, y)
 
-        return alive_neighbors
+        potential_neighbor_positions = [tuple([sum(coordinate) for coordinate in zip(position, direction)]) for direction in DIRECTIONS]
+        neighbor_positions = []
 
-    def count_alive_neighbors(self, x, y):
-        return len(self.get_alive_neighbors(x, y))
+        for potential_position in potential_neighbor_positions:
+            if potential_position[0] in range(self.bounds[0]) and potential_position[1] in range(self.bounds[1]):
+                neighbor_positions.append(potential_position)
+
+        return neighbor_positions
+
 
     def next_frame(self):
         changes = []
-        for x in range(self.bounds[0]):
-            for y in range(self.bounds[1]):
-                current_cell = self.get_cell(x, y)
-                alive_neighbor_count = self.count_alive_neighbors(x, y)
+        counts = {}
+        for cell_position in self.alive_cell_positions:
+            neighbor_positions = self.get_neighbor_positions(*cell_position)
+            for neighbor_position in neighbor_positions:
+                counts[neighbor_position] = counts.get(neighbor_position, 0) + 1
 
-                if current_cell.alive:
-                    if alive_neighbor_count < 2:
-                        changes.append([current_cell, False])
-                    if alive_neighbor_count > 3:
-                        changes.append([current_cell, False])
-                else:
-                    if alive_neighbor_count == 3:
-                        changes.append([current_cell, True])
+        for cell_position, count in counts.items():
+            cell = self.get_cell(*cell_position)
+            if cell.alive:
+                if count < 2:
+                    changes.append([cell_position, False])
+                if count > 3:
+                    changes.append([cell_position, False])
+            else:
+                if count == 3:
+                    changes.append([cell_position, True])
 
+        self.__apply_changes(changes)
+
+    def __apply_changes(self, changes):
         for change in changes:
-            cell = change[0]
+            position = change[0]
             is_alive = change[1]
             if is_alive:
-                cell.wake_up()
+                self.wake_up_cell(*position)
             else:
-                cell.kill()
+                self.kill_cell(*position)
+
 
     def __str__(self):
         str_builder = ''
@@ -105,17 +122,17 @@ class Board:
 
 def start():
     board = Board(20, 20)
-    board.get_cell(4, 6).toggle_state()
-    board.get_cell(5, 7).toggle_state()
-    board.get_cell(6, 7).toggle_state()
-    board.get_cell(4, 8).toggle_state()
-    board.get_cell(5, 8).toggle_state()
+    board.toggle_cell(4, 6)
+    board.toggle_cell(5, 7)
+    board.toggle_cell(6, 7)
+    board.toggle_cell(4, 8)
+    board.toggle_cell(5, 8)
 
-    board.get_cell(13, 6).toggle_state()
-    board.get_cell(12, 7).toggle_state()
-    board.get_cell(11, 7).toggle_state()
-    board.get_cell(13, 8).toggle_state()
-    board.get_cell(12, 8).toggle_state()
+    board.toggle_cell(13, 6)
+    board.toggle_cell(12, 7)
+    board.toggle_cell(11, 7)
+    board.toggle_cell(13, 8)
+    board.toggle_cell(12, 8)
 
     main_loop(board)
 
