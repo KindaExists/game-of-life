@@ -35,14 +35,6 @@ class Board:
         self.bounds = (width, height)
         self.board = [[Cell() for _ in range(width)] for _ in range(height)]
 
-    def printBoard(self):
-        print('  ' + ' '.join([str(num % 10) for num in range(20)]))
-        for index, row in enumerate(self.board):
-            print(index % 10, end=' ')
-            for cell in row:
-                print(cell, end=' ')
-            print()
-
     def get_cell(self, x, y):
         return self.board[y][x]
 
@@ -103,6 +95,13 @@ class Board:
             else:
                 cell.kill()
 
+    def __str__(self):
+        str_builder = ''
+        str_builder += f'  {" ".join([str(num % 10) for num in range(self.bounds[0])])}\n'
+        str_builder += '\n'.join([f'{i % 10} {" ".join([str(cell) for cell in row])}' for i, row in enumerate(self.board)])
+        return str_builder
+
+
 
 def start():
     board = Board(20, 20)
@@ -118,15 +117,12 @@ def start():
     board.get_cell(13, 8).toggle_state()
     board.get_cell(12, 8).toggle_state()
 
-
-    board.printBoard()
-    print(board.count_alive_neighbors(7, 7))
     main_loop(board)
 
 
 def main_loop(board):
     while True:
-        board.printBoard()
+        print(board)
         time.sleep(0.2)
         board.next_frame()
 
