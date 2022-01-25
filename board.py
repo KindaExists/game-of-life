@@ -40,13 +40,15 @@ class Board:
 
     def wake_up_cell(self, x, y):
         cell = self.get_cell(x, y)
-        cell.wake_up()
-        self.alive_cell_positions.append((x, y))
+        if not cell.alive:
+            cell.wake_up()
+            self.alive_cell_positions.append((x, y))
 
     def kill_cell(self, x, y):
         cell = self.get_cell(x, y)
-        cell.kill()
-        self.alive_cell_positions.remove((x, y))
+        if cell.alive:
+            cell.kill()
+            self.alive_cell_positions.remove((x, y))
 
     def toggle_cell(self, x, y):
         cell = self.get_cell(x, y)
@@ -74,6 +76,7 @@ class Board:
         changes = []
         counts = {}
         for cell_position in self.alive_cell_positions:
+            counts[cell_position] = counts.get(cell_position, 0)
             neighbor_positions = self.get_neighbor_positions(*cell_position)
             for neighbor_position in neighbor_positions:
                 counts[neighbor_position] = counts.get(neighbor_position, 0) + 1
